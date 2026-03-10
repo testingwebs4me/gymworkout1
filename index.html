@@ -110,9 +110,10 @@
     border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
     transition: border-color 0.2s, transform 0.2s;
     animation: itemIn 0.4s cubic-bezier(0.16,1,0.3,1) both;
+    text-decoration: none; color: inherit; cursor: pointer;
   }
 
-  .exercise-item:hover { border-color: #383838; transform: translateY(-2px); }
+  .exercise-item:hover { border-color: #e8ff47; transform: translateY(-3px); box-shadow: 0 0 0 1px #e8ff4722, 0 8px 32px rgba(232,255,71,0.06); }
 
   @keyframes itemIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -127,6 +128,7 @@
   .ex-img-wrap {
     width: 100%; aspect-ratio: 4/3; background: #111;
     overflow: hidden; display: flex; align-items: center; justify-content: center;
+    position: relative;
   }
 
   .ex-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s; }
@@ -136,7 +138,23 @@
   .img-placeholder svg { width: 42px; height: 42px; }
   .img-placeholder span { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
 
-  .img-loading { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .ex-yt-badge {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: rgba(0,0,0,0.75);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 4px 7px;
+    display: flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #ccc;
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .ex-yt-badge svg { width: 12px; height: 12px; fill: #ff4444; flex-shrink: 0; }
+  .exercise-item:hover .ex-yt-badge { opacity: 1; }
   .spinner { width: 26px; height: 26px; border: 2px solid #222; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .img-loading span { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #333; }
@@ -429,13 +447,26 @@ function selectDay(day) {
   const list = document.getElementById('exList');
 
   w.exercises.forEach((ex, i) => {
-    const card = document.createElement('div');
+    // YouTube: search for exercise + "how to" filtered to short videos (under 4 min)
+    const ytQuery = encodeURIComponent(ex.name + ' exercise how to');
+    const ytUrl = `https://www.youtube.com/results?search_query=${ytQuery}&sp=EgIYAQ%3D%3D`;
+
+    const card = document.createElement('a');
     card.className = 'exercise-item';
     card.style.animationDelay = (0.04 + i * 0.04) + 's';
+    card.href = ytUrl;
+    card.target = '_blank';
+    card.rel = 'noopener noreferrer';
 
     const imgSlotId = `img-${day}-${i}`;
     card.innerHTML = `
-      <div class="ex-img-wrap" id="${imgSlotId}">${loadingHTML}</div>
+      <div class="ex-img-wrap" id="${imgSlotId}">
+        ${loadingHTML}
+        <div class="ex-yt-badge">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23.5 6.2s-.3-2-1.2-2.8c-1.1-1.2-2.4-1.2-3-1.3C16.8 2 12 2 12 2s-4.8 0-7.3.1c-.6.1-1.9.1-3 1.3C.8 4.2.5 6.2.5 6.2S.2 8.5.2 10.8v2.1c0 2.3.3 4.6.3 4.6s.3 2 1.2 2.8c1.1 1.2 2.6 1.1 3.3 1.2C7.2 21.7 12 21.8 12 21.8s4.8 0 7.3-.2c.6-.1 1.9-.1 3-1.3.9-.8 1.2-2.8 1.2-2.8s.3-2.3.3-4.6v-2.1c0-2.3-.3-4.6-.3-4.6zM9.7 15.5V8.4l8.1 3.6-8.1 3.5z"/></svg>
+          Watch
+        </div>
+      </div>
       <div class="ex-body">
         <span class="ex-number">${String(i+1).padStart(2,'0')}</span>
         <div class="ex-info">
@@ -448,7 +479,8 @@ function selectDay(day) {
 
     // If DB already loaded, set image immediately
     if (dbReady) {
-      setImage(document.getElementById(imgSlotId), getImageUrl(ex.search));
+      const slot = card.querySelector(`#${imgSlotId}`);
+      if (slot) setImage(slot, getImageUrl(ex.search));
     }
     // Otherwise refreshCurrentImages() will handle it when DB is ready
   });

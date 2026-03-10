@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Training Week</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --card: #161616;
+    --border: #222;
+    --accent: #e8ff47;
+    --text: #f0f0f0;
+    --muted: #666;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.5;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 1; }
+
+  header { padding: 60px 0 40px; text-align: center; }
+
+  .header-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 12vw, 100px);
+    line-height: 0.9; letter-spacing: 0.02em;
+  }
+
+  h1 span { color: var(--accent); }
+  .header-sub { margin-top: 16px; font-size: 14px; color: var(--muted); font-weight: 300; }
+
+  /* Loading banner */
+  #db-status {
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 0 0;
+    min-height: 20px;
+    transition: opacity 0.5s;
+  }
+
+  #db-status.hidden { opacity: 0; }
+
+  /* DAY GRID */
+  .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 44px 0 60px; }
+
+  @media (max-width: 640px) { .days-grid { grid-template-columns: repeat(4, 1fr); } }
+
+  .day-btn {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 8px; cursor: pointer;
+    transition: all 0.2s; text-align: center;
+  }
+
+  .day-btn:hover:not(.rest-day) { border-color: #444; background: #1a1a1a; }
+  .day-btn.active { border-color: var(--accent); background: #1a1c0a; }
+  .day-btn.active .day-name { color: var(--accent); }
+  .day-btn.rest-day { opacity: 0.35; cursor: default; }
+
+  .day-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.05em; display: block; line-height: 1; }
+  .day-tag { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); display: block; margin-top: 6px; line-height: 1.3; }
+  .day-btn.active .day-tag { color: #a8c020; }
+  .day-dot { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; margin: 8px auto 0; opacity: 0; transition: opacity 0.2s; }
+  .day-btn.active .day-dot { opacity: 1; }
+
+  /* PANEL */
+  .workout-panel { display: none; animation: slideIn 0.35s cubic-bezier(0.16,1,0.3,1); }
+  .workout-panel.visible { display: block; }
+
+  @keyframes slideIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+  .panel-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+
+  .panel-day { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 64px); letter-spacing: 0.03em; line-height: 1; }
+
+  .panel-focus {
+    font-size: 13px; font-weight: 500; color: var(--accent);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 6px 14px; border: 1px solid var(--accent); border-radius: 999px; white-space: nowrap;
+  }
+
+  /* CARDS */
+  .exercise-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+
+  .exercise-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+    transition: border-color 0.2s, transform 0.2s;
+    animation: itemIn 0.4s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  .exercise-item:hover { border-color: #383838; transform: translateY(-2px); }
+
+  @keyframes itemIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  .exercise-item:nth-child(1) { animation-delay: 0.04s; }
+  .exercise-item:nth-child(2) { animation-delay: 0.08s; }
+  .exercise-item:nth-child(3) { animation-delay: 0.12s; }
+  .exercise-item:nth-child(4) { animation-delay: 0.16s; }
+  .exercise-item:nth-child(5) { animation-delay: 0.20s; }
+  .exercise-item:nth-child(6) { animation-delay: 0.24s; }
+  .exercise-item:nth-child(7) { animation-delay: 0.28s; }
+
+  .ex-img-wrap {
+    width: 100%; aspect-ratio: 4/3; background: #111;
+    overflow: hidden; display: flex; align-items: center; justify-content: center;
+  }
+
+  .ex-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s; }
+  .exercise-item:hover .ex-img-wrap img { transform: scale(1.04); }
+
+  .img-placeholder { display: flex; flex-direction: column; align-items: center; gap: 10px; color: #2d2d2d; }
+  .img-placeholder svg { width: 42px; height: 42px; }
+  .img-placeholder span { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .img-loading { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .spinner { width: 26px; height: 26px; border: 2px solid #222; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .img-loading span { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #333; }
+
+  .ex-body { padding: 14px 16px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .ex-number { font-family: 'Bebas Neue', sans-serif; font-size: 16px; color: #2d2d2d; line-height: 1; min-width: 24px; padding-top: 2px; }
+  .ex-info { flex: 1; }
+  .ex-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .ex-sets-label { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: 0.04em; }
+  .ex-badge { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--accent); letter-spacing: 0.04em; white-space: nowrap; padding-top: 2px; }
+
+  .stats-row { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+
+  .stat-chip {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 18px;
+    font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: 0.04em;
+  }
+
+  .stat-chip span { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--text); letter-spacing: 0.03em; line-height: 1.1; }
+
+  .rest-panel {
+    text-align: center; padding: 80px 20px;
+    border: 1px dashed #222; border-radius: 20px;
+    animation: slideIn 0.35s ease;
+  }
+
+  .rest-emoji { font-size: 56px; margin-bottom: 20px; display: block; }
+  .rest-panel h2 { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 0.05em; color: #333; }
+  .rest-panel p { color: var(--muted); font-size: 14px; margin-top: 10px; }
+
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 0 0 50px; }
+  footer { text-align: center; padding: 60px 0 40px; font-size: 12px; color: #2a2a2a; letter-spacing: 0.08em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <p class="header-eyebrow">Weekly Program</p>
+    <h1>MY<br><span>TRAINING</span><br>WEEK</h1>
+    <p class="header-sub">Select a day to view your workout</p>
+  </header>
+  <div id="db-status">Loading exercise images…</div>
+
+  <div class="days-grid" id="daysGrid"></div>
+  <div class="divider"></div>
+  <div id="workoutDisplay"></div>
+  <footer>Built for the grind &mdash; stay consistent</footer>
+</div>
+
+<script>
+// ─── WORKOUT DATA ────────────────────────────────────────────────────────────
+const workouts = {
+  Sunday: {
+    focus: "Back, Biceps & Abs",
+    exercises: [
+      { name: "Lat Pulldown",            search: "lat pulldown",           sets: "3", reps: "8–10"   },
+      { name: "Lever Pronated Row",       search: "seated cable row",       sets: "3", reps: "8–10"   },
+      { name: "Seated V-Bar Row",         search: "close grip cable row",   sets: "3", reps: "10–12"  },
+      { name: "Straight Arm Pulldown",    search: "straight arm pulldown",  sets: "3", reps: "12–15"  },
+      { name: "Seated DB Curl",           search: "seated dumbbell curl",   sets: "3", reps: "8–10"   },
+      { name: "Cable Curl",               search: "cable curl",             sets: "3", reps: "12–15"  },
+      { name: "Ab Machine Crunch",        search: "ab crunch machine",      sets: "3", reps: "15–20"  },
+    ]
+  },
+  Monday: {
+    focus: "Chest & Triceps",
+    exercises: [
+      { name: "Incline DB Press",         search: "incline dumbbell press", sets: "3", reps: "6–8"    },
+      { name: "Flat Barbell Bench",       search: "barbell bench press",    sets: "3", reps: "6–8"    },
+      { name: "Chest Press Machine",      search: "chest press machine",    sets: "3", reps: "10–12"  },
+      { name: "Cable Fly / Pec Deck",     search: "cable crossover",        sets: "3", reps: "12–15"  },
+      { name: "DB Lateral Raise",         search: "lateral raise dumbbell", sets: "3", reps: "15"     },
+      { name: "Tricep Pushdown",          search: "triceps pushdown",       sets: "3", reps: "10–12"  },
+      { name: "Overhead Cable Extension", search: "overhead triceps cable", sets: "3", reps: "12–15"  },
+    ]
+  },
+  Tuesday: {
+    focus: "Legs, Posterior Chain & Abs",
+    exercises: [
+      { name: "Squat (Barbell or Smith)", search: "barbell squat",          sets: "4", reps: "6–10"   },
+      { name: "Deadlift or RDL",          search: "romanian deadlift",      sets: "3", reps: "6–8"    },
+      { name: "Leg Press",                search: "leg press",              sets: "3", reps: "10–12"  },
+      { name: "Leg Extension",            search: "leg extension",          sets: "3", reps: "12–15"  },
+      { name: "Leg Curl",                 search: "leg curl",               sets: "3", reps: "12–15"  },
+      { name: "Calf Raises",              search: "standing calf raise",    sets: "4", reps: "15–20"  },
+      { name: "Ab Machine Crunch",        search: "ab crunch machine",      sets: "3", reps: "15–20"  },
+    ]
+  },
+  Wednesday: {
+    focus: "Shoulders & Rear Delts",
+    exercises: [
+      { name: "Shoulder Press",           search: "barbell shoulder press", sets: "3", reps: "8–12"   },
+      { name: "DB Lateral Raise",         search: "lateral raise dumbbell", sets: "4", reps: "15–20"  },
+      { name: "Rear Delt Machine",        search: "rear delt fly",          sets: "3", reps: "12–15"  },
+      { name: "Face Pulls",               search: "face pull",              sets: "3", reps: "15–20"  },
+    ]
+  },
+  Thursday: {
+    focus: "Chest, Arms & Abs",
+    exercises: [
+      { name: "Incline DB Press",         search: "incline dumbbell press", sets: "3", reps: "10–12"  },
+      { name: "Cable Fly",                search: "cable crossover",        sets: "3", reps: "15"     },
+      { name: "Pushups",                  search: "push-up",                sets: "2", reps: "Failure" },
+      { name: "Preacher Curl",            search: "preacher curl",          sets: "3", reps: "12–15"  },
+      { name: "Hammer Curl",              search: "hammer curl",            sets: "2", reps: "10–12"  },
+      { name: "Rope Pushdown",            search: "triceps pushdown rope",  sets: "3", reps: "12–15"  },
+      { name: "Ab Machine Crunch",        search: "ab crunch machine",      sets: "3", reps: "15–20"  },
+    ]
+  },
+  Friday:   { rest: true },
+  Saturday: { rest: true },
+};
+
+const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const short = { Sunday:"SUN", Monday:"MON", Tuesday:"TUE", Wednesday:"WED", Thursday:"THU", Friday:"FRI", Saturday:"SAT" };
+
+// ─── IMAGE DATABASE ───────────────────────────────────────────────────────────
+const IMG_BASE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
+const DB_URL   = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json";
+const CACHE_KEY = "exercise_img_cache_v1";
+
+let imageMap = {}; // search term → image URL
+let dbReady = false;
+
+function normalize(str) {
+  return str.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+}
+
+function score(dbName, query) {
+  const d = normalize(dbName);
+  const q = normalize(query);
+  if (d === q) return 100;
+  if (d.includes(q)) return 80;
+  const words = q.split(' ');
+  const matched = words.filter(w => d.includes(w)).length;
+  return Math.round((matched / words.length) * 60);
+}
+
+async function loadDatabase() {
+  const status = document.getElementById('db-status');
+
+  // Try cache first
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      imageMap = JSON.parse(cached);
+      dbReady = true;
+      status.classList.add('hidden');
+      return;
+    }
+  } catch(e) {}
+
+  // Fetch the DB
+  try {
+    status.textContent = "Fetching exercise database…";
+    const res = await fetch(DB_URL);
+    const exercises = await res.json();
+
+    // Build map: for each unique search term, find best match in DB
+    const allSearchTerms = new Set();
+    for (const day of days) {
+      const w = workouts[day];
+      if (!w.rest) w.exercises.forEach(ex => allSearchTerms.add(ex.search));
+    }
+
+    for (const term of allSearchTerms) {
+      let best = null, bestScore = 0;
+      for (const ex of exercises) {
+        const s = score(ex.name, term);
+        if (s > bestScore) {
+          bestScore = s;
+          best = ex;
+        }
+      }
+      if (best && best.images && best.images.length > 0) {
+        imageMap[term] = IMG_BASE + best.images[0];
+      }
+    }
+
+    // Cache it
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(imageMap)); } catch(e) {}
+
+    dbReady = true;
+    status.textContent = "Images loaded ✓";
+    setTimeout(() => status.classList.add('hidden'), 1500);
+
+    // Refresh any currently displayed images
+    refreshCurrentImages();
+
+  } catch(e) {
+    status.textContent = "Could not load images";
+    setTimeout(() => status.classList.add('hidden'), 2000);
+  }
+}
+
+function getImageUrl(searchTerm) {
+  return imageMap[searchTerm] || null;
+}
+
+const placeholderHTML = `<div class="img-placeholder">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+    <rect x="3" y="8" width="4" height="8" rx="1"/>
+    <rect x="17" y="8" width="4" height="8" rx="1"/>
+    <rect x="7" y="10" width="10" height="4" rx="1"/>
+  </svg>
+  <span>No image</span>
+</div>`;
+
+const loadingHTML = `<div class="img-loading">
+  <div class="spinner"></div>
+  <span>Loading</span>
+</div>`;
+
+function setImage(slot, url) {
+  if (!url) { slot.innerHTML = placeholderHTML; return; }
+  const img = new Image();
+  img.onload = () => { slot.innerHTML = ''; slot.appendChild(img); };
+  img.onerror = () => { slot.innerHTML = placeholderHTML; };
+  img.src = url;
+  img.alt = '';
+  img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.3s';
+}
+
+// ─── CURRENT STATE ────────────────────────────────────────────────────────────
+let currentDay = null;
+
+function refreshCurrentImages() {
+  if (!currentDay) return;
+  const w = workouts[currentDay];
+  if (!w || w.rest) return;
+  w.exercises.forEach((ex, i) => {
+    const slot = document.getElementById(`img-${currentDay}-${i}`);
+    if (slot && slot.querySelector('.img-loading')) {
+      setImage(slot, getImageUrl(ex.search));
+    }
+  });
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+const grid = document.getElementById('daysGrid');
+const display = document.getElementById('workoutDisplay');
+
+days.forEach(day => {
+  const w = workouts[day];
+  const btn = document.createElement('button');
+  btn.className = 'day-btn' + (w.rest ? ' rest-day' : '');
+  btn.dataset.day = day;
+  btn.innerHTML = `
+    <span class="day-name">${short[day]}</span>
+    <span class="day-tag">${w.rest ? 'Rest' : w.focus.split(' & ')[0]}</span>
+    <div class="day-dot"></div>
+  `;
+  if (!w.rest) btn.addEventListener('click', () => selectDay(day));
+  grid.appendChild(btn);
+});
+
+function selectDay(day) {
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-day="${day}"]`).classList.add('active');
+  currentDay = day;
+
+  const w = workouts[day];
+
+  if (w.rest) {
+    display.innerHTML = `
+      <div class="rest-panel">
+        <span class="rest-emoji">💤</span>
+        <h2>Rest Day</h2>
+        <p>Recovery is part of the program. Sleep, eat, repeat.</p>
+      </div>`;
+    return;
+  }
+
+  const totalSets = w.exercises.reduce((s, e) => s + parseInt(e.sets), 0);
+
+  display.innerHTML = `
+    <div class="workout-panel visible">
+      <div class="panel-header">
+        <div class="panel-day">${day}</div>
+        <div class="panel-focus">${w.focus}</div>
+      </div>
+      <div class="exercise-list" id="exList"></div>
+      <div class="stats-row">
+        <div class="stat-chip"><span>${w.exercises.length}</span>Exercises</div>
+        <div class="stat-chip"><span>${totalSets}</span>Total Sets</div>
+      </div>
+    </div>`;
+
+  const list = document.getElementById('exList');
+
+  w.exercises.forEach((ex, i) => {
+    const card = document.createElement('div');
+    card.className = 'exercise-item';
+    card.style.animationDelay = (0.04 + i * 0.04) + 's';
+
+    const imgSlotId = `img-${day}-${i}`;
+    card.innerHTML = `
+      <div class="ex-img-wrap" id="${imgSlotId}">${loadingHTML}</div>
+      <div class="ex-body">
+        <span class="ex-number">${String(i+1).padStart(2,'0')}</span>
+        <div class="ex-info">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-sets-label">${ex.sets} sets</div>
+        </div>
+        <div class="ex-badge">${ex.sets}&times;${ex.reps}</div>
+      </div>`;
+    list.appendChild(card);
+
+    // If DB already loaded, set image immediately
+    if (dbReady) {
+      setImage(document.getElementById(imgSlotId), getImageUrl(ex.search));
+    }
+    // Otherwise refreshCurrentImages() will handle it when DB is ready
+  });
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+loadDatabase();
+
+const todayIdx = new Date().getDay();
+const todayName = days[todayIdx];
+if (!workouts[todayName].rest) {
+  selectDay(todayName);
+} else {
+  for (let i = 1; i <= 7; i++) {
+    const next = days[(todayIdx + i) % 7];
+    if (!workouts[next].rest) { selectDay(next); break; }
+  }
+}
+</script>
+</body>
+</html>
